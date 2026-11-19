@@ -16,15 +16,28 @@ Spring Boot and a drag-and-drop board UI.
 - **Schema migrations** with Flyway; Hibernate runs in `validate` mode, so the schema is owned by migrations
 - **Domain rule**: moving an application out of Wishlist stamps its applied date automatically
 - **Kanban UI** in plain JavaScript: drag cards between columns. It works in dark mode and on mobile.
-- **CI** on GitHub Actions runs the test suite on every push
+- **Dockerized**: a multi-stage image running as a non-root user, plus Docker Compose for the app and PostgreSQL
+- **Real-database tests**: a Testcontainers suite runs against PostgreSQL 17 in Docker
+- **CI** on GitHub Actions runs every test on each push, then builds the image, starts the full stack with Compose and smoke-tests sign-in
 
 ## Tech stack
 
-Java 21 · Spring Boot 4 · Spring Security 7 · Spring Data JPA / Hibernate 7 · Flyway · H2 (dev) / PostgreSQL (prod) · JUnit 5 + MockMvc · GitHub Actions
+Java 21 · Spring Boot 4 · Spring Security 7 · Spring Data JPA / Hibernate 7 · Flyway · PostgreSQL 17 (H2 for quick local dev) · Docker / Compose · JUnit 5 + MockMvc + Testcontainers · GitHub Actions
 
 ## Run it
 
-Only Java 21 is required. The Maven wrapper downloads everything else.
+### Full stack with Docker (app + PostgreSQL)
+
+```bash
+docker compose up --build
+# open http://localhost:8080 and sign in as demo@jobtracker.dev / demo1234
+```
+
+Data persists in a Docker volume. Run `docker compose down -v` to wipe it.
+
+### Without Docker
+
+Only Java 21 is required. The Maven wrapper downloads everything else, and an in-memory H2 database stands in for PostgreSQL.
 
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo   # with sample data
@@ -39,7 +52,8 @@ DATABASE_USERNAME=jobtracker DATABASE_PASSWORD=secret \
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=postgres
 ```
 
-Run the tests with `./mvnw test`.
+Run the tests with `./mvnw test`. The PostgreSQL (Testcontainers) tests run when Docker is available
+and are skipped otherwise.
 
 ## API
 
@@ -99,13 +113,18 @@ Validation error response:
 - **Layering:** controller (HTTP and DTOs) → service (transactions and business rules) → repository.
   JPA entities never leave the service layer, so the API's JSON contract stays independent of the database schema.
 - **Dynamic filters** use JPA Specifications instead of `:param IS NULL` JPQL tricks, which break on PostgreSQL's type inference.
+- **Two-stage Docker build**: dependencies are resolved in their own layer, so code-only changes rebuild in
+  seconds. The runtime image ships a JRE, not a JDK, and the app runs as a non-root user. The heap is sized
+  from the container's memory limit (`MaxRAMPercentage`), not the host's.
+- **H2 for speed, PostgreSQL for truth**: most tests run on H2 in PostgreSQL mode in under a second. A
+  Testcontainers suite then re-checks migrations, constraints, cascades and query typing on real PostgreSQL.
 - **Stats** are computed with a single `GROUP BY` query, not by loading every row.
 
 ## Roadmap
 
 - [x] User accounts with session auth (each user sees only their own applications)
 - [ ] Rate-limit login attempts
-- [ ] Docker Compose with PostgreSQL, plus Testcontainers integration tests
+- [x] Docker Compose with PostgreSQL, plus Testcontainers integration tests
 - [ ] Status history / timeline per application
 - [ ] Follow-up reminders for applications with no response after N days
 - [ ] Deploy to a public URL
