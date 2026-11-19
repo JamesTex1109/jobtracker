@@ -26,7 +26,7 @@ class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/index.html", "/*.css", "/*.js", "/favicon.ico").permitAll()
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/csrf").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/csrf", "/api/demo").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())

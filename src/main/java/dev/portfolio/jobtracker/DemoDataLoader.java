@@ -9,10 +9,16 @@ import java.time.LocalDate;
 import java.util.List;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
-/** Seeds a demo account with sample data when run with --spring.profiles.active=demo. */
+/**
+ * Seeds a demo account with sample data when run with --spring.profiles.active=demo.
+ * The demo login is public, so its data is reset every hour to undo whatever visitors type in.
+ */
 @Component
 @Profile("demo")
 class DemoDataLoader implements CommandLineRunner {
@@ -23,19 +29,36 @@ class DemoDataLoader implements CommandLineRunner {
     private final AppUserRepository users;
     private final JobApplicationRepository applications;
     private final PasswordEncoder passwordEncoder;
+    private final TransactionTemplate tx;
 
-    DemoDataLoader(AppUserRepository users, JobApplicationRepository applications, PasswordEncoder passwordEncoder) {
+    DemoDataLoader(AppUserRepository users, JobApplicationRepository applications,
+                   PasswordEncoder passwordEncoder, PlatformTransactionManager txManager) {
         this.users = users;
         this.applications = applications;
         this.passwordEncoder = passwordEncoder;
+        this.tx = new TransactionTemplate(txManager);
     }
 
     @Override
     public void run(String... args) {
-        if (users.existsByEmail(DEMO_EMAIL)) {
-            return;
-        }
-        long owner = users.save(new AppUser(DEMO_EMAIL, passwordEncoder.encode(DEMO_PASSWORD), "Demo User")).getId();
+        reset();
+    }
+
+    /**
+     * Wipes and reseeds the demo account in one transaction, so visitors never see it half-empty.
+     * Uses TransactionTemplate rather than @Transactional because run() calls this directly, and
+     * self-invocation bypasses Spring's transactional proxy.
+     */
+    @Scheduled(cron = "0 0 * * * *")
+    public void reset() {
+        tx.executeWithoutResult(status -> reseed());
+    }
+
+    private void reseed() {
+        long owner = users.findByEmail(DEMO_EMAIL)
+                .orElseGet(() -> users.save(new AppUser(DEMO_EMAIL, passwordEncoder.encode(DEMO_PASSWORD), "Demo User")))
+                .getId();
+        applications.deleteAllByOwnerId(owner);
         LocalDate today = LocalDate.now();
         applications.saveAll(List.of(
                 app(owner, "Northwind Labs", "Software Engineer I", ApplicationStatus.WISHLIST, "Remote", null),

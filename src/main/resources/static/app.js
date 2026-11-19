@@ -92,6 +92,19 @@ $("#auth-form").addEventListener("submit", async (e) => {
   }
 });
 
+// Offered only when the server runs with the demo profile.
+fetch("/api/demo").then((res) => (res.ok ? res.json() : null)).then((demo) => {
+  if (!demo) return;
+  $("#demo-btn").hidden = false;
+  $("#demo-btn").addEventListener("click", () => {
+    setAuthMode(false);
+    const f = $("#auth-form");
+    f.elements.email.value = demo.email;
+    f.elements.password.value = demo.password;
+    f.requestSubmit();
+  });
+}).catch(() => {});
+
 $("#logout-btn").addEventListener("click", async () => {
   await request("/api/auth/logout", { method: "POST" });
   showAuth();

@@ -1,0 +1,20 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Database is external (Neon free tier); paste its credentials when Render prompts.
+services:
+  - type: web
+    name: jobtracker
+    runtime: docker
+    plan: free
+    healthCheckPath: /actuator/health
+    autoDeployTrigger: checksPass   # deploy only after GitHub CI passes
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: postgres,demo
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: DATABASE_URL          # jdbc:postgresql://<host>/<db>?sslmode=require
+        sync: false
+      - key: DATABASE_USERNAME
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
