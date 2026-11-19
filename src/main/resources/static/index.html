@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <h1>Job Tracker</h1>
+    <input id="search" type="search" placeholder="Search company or role…" aria-label="Search">
+    <button id="new-btn" class="primary">+ New application</button>
+  </header>
+
+  <section id="stats" class="stats" aria-live="polite"></section>
+
+  <main id="board" class="board"></main>
+
+  <dialog id="dialog">
+    <form id="form" method="dialog">
+      <h2 id="form-title">New application</h2>
+      <label>Company* <input name="company" required maxlength="120"></label>
+      <label>Role* <input name="role" required maxlength="120"></label>
+      <div class="row">
+        <label>Status <select name="status"></select></label>
+        <label>Applied <input name="appliedDate" type="date"></label>
+      </div>
+      <label>Location <input name="location" maxlength="120"></label>
+      <label>Job URL <input name="jobUrl" type="url" maxlength="500" placeholder="https://"></label>
+      <label>Notes <textarea name="notes" rows="3" maxlength="2000"></textarea></label>
+      <p id="form-error" class="error" role="alert"></p>
+      <div class="actions">
+        <button type="button" id="delete-btn" class="danger">Delete</button>
+        <span class="spacer"></span>
+        <button type="button" id="cancel-btn">Cancel</button>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
