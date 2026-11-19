@@ -7,6 +7,10 @@ final class JobApplicationSpecs {
 
     private JobApplicationSpecs() {}
 
+    static Specification<JobApplication> ownedBy(long ownerId) {
+        return (root, query, cb) -> cb.equal(root.get("ownerId"), ownerId);
+    }
+
     static Specification<JobApplication> hasStatus(ApplicationStatus status) {
         return (root, query, cb) -> status == null ? null : cb.equal(root.get("status"), status);
     }

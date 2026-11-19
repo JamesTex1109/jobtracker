@@ -9,14 +9,14 @@ class JobApplicationTest {
 
     @Test
     void wishlistDoesNotSetAppliedDate() {
-        var app = new JobApplication("Acme", "SWE", ApplicationStatus.WISHLIST);
+        var app = new JobApplication(1L, "Acme", "SWE", ApplicationStatus.WISHLIST);
         app.changeStatus(ApplicationStatus.WISHLIST);
         assertThat(app.getAppliedDate()).isNull();
     }
 
     @Test
     void keepsExistingAppliedDate() {
-        var app = new JobApplication("Acme", "SWE", ApplicationStatus.WISHLIST);
+        var app = new JobApplication(1L, "Acme", "SWE", ApplicationStatus.WISHLIST);
         LocalDate earlier = LocalDate.of(2026, 1, 15);
         app.setAppliedDate(earlier);
         app.changeStatus(ApplicationStatus.INTERVIEWING);

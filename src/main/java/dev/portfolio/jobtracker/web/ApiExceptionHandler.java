@@ -1,6 +1,7 @@
 package dev.portfolio.jobtracker.web;
 
 import dev.portfolio.jobtracker.application.ApplicationNotFoundException;
+import dev.portfolio.jobtracker.user.EmailAlreadyRegisteredException;
 import java.util.Map;
 import java.util.TreeMap;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ApplicationNotFoundException.class)
     ProblemDetail notFound(ApplicationNotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(EmailAlreadyRegisteredException.class)
+    ProblemDetail conflict(EmailAlreadyRegisteredException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

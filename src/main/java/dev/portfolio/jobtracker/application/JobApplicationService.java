@@ -10,6 +10,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Every method takes the caller's user id and only touches that user's rows. Another user's
+ * application is reported as "not found" so ids can't be probed to learn what exists.
+ */
 @Service
 @Transactional(readOnly = true)
 public class JobApplicationService {
@@ -20,27 +24,28 @@ public class JobApplicationService {
         this.repository = repository;
     }
 
-    public Page<JobApplication> search(ApplicationStatus status, String text, Pageable pageable) {
+    public Page<JobApplication> search(long ownerId, ApplicationStatus status, String text, Pageable pageable) {
         Specification<JobApplication> spec = Specification.allOf(
+                JobApplicationSpecs.ownedBy(ownerId),
                 JobApplicationSpecs.hasStatus(status),
                 JobApplicationSpecs.matches(text));
         return repository.findAll(spec, pageable);
     }
 
-    public JobApplication get(long id) {
-        return repository.findById(id).orElseThrow(() -> new ApplicationNotFoundException(id));
+    public JobApplication get(long ownerId, long id) {
+        return repository.findByIdAndOwnerId(id, ownerId).orElseThrow(() -> new ApplicationNotFoundException(id));
     }
 
     @Transactional
-    public JobApplication create(JobApplicationRequest request) {
-        JobApplication app = new JobApplication(request.company(), request.role(), ApplicationStatus.WISHLIST);
+    public JobApplication create(long ownerId, JobApplicationRequest request) {
+        JobApplication app = new JobApplication(ownerId, request.company(), request.role(), ApplicationStatus.WISHLIST);
         apply(app, request);
         return repository.save(app);
     }
 
     @Transactional
-    public JobApplication update(long id, JobApplicationRequest request) {
-        JobApplication app = get(id);
+    public JobApplication update(long ownerId, long id, JobApplicationRequest request) {
+        JobApplication app = get(ownerId, id);
         app.setCompany(request.company());
         app.setRole(request.role());
         apply(app, request);
@@ -48,23 +53,23 @@ public class JobApplicationService {
     }
 
     @Transactional
-    public JobApplication changeStatus(long id, ApplicationStatus status) {
-        JobApplication app = get(id);
+    public JobApplication changeStatus(long ownerId, long id, ApplicationStatus status) {
+        JobApplication app = get(ownerId, id);
         app.changeStatus(status);
         return app;
     }
 
     @Transactional
-    public void delete(long id) {
-        repository.delete(get(id));
+    public void delete(long ownerId, long id) {
+        repository.delete(get(ownerId, id));
     }
 
-    public StatsResponse stats() {
+    public StatsResponse stats(long ownerId) {
         Map<ApplicationStatus, Long> byStatus = new EnumMap<>(ApplicationStatus.class);
         for (ApplicationStatus s : ApplicationStatus.values()) {
             byStatus.put(s, 0L);
         }
-        repository.countByStatus().forEach(c -> byStatus.put(c.status(), c.count()));
+        repository.countByStatus(ownerId).forEach(c -> byStatus.put(c.status(), c.count()));
 
         long total = byStatus.values().stream().mapToLong(Long::longValue).sum();
         long submitted = total - byStatus.get(ApplicationStatus.WISHLIST);

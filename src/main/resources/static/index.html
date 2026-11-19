@@ -7,15 +7,35 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="top">
-    <h1>Job Tracker</h1>
-    <input id="search" type="search" placeholder="Search company or role…" aria-label="Search">
-    <button id="new-btn" class="primary">+ New application</button>
-  </header>
+  <section id="auth-view" class="auth" hidden>
+    <form id="auth-form" class="auth-card">
+      <h1>Job Tracker</h1>
+      <p class="muted" id="auth-subtitle">Sign in to your pipeline</p>
+      <label id="name-field" hidden>Name <input name="displayName" maxlength="80" autocomplete="name"></label>
+      <label>Email <input name="email" type="email" required autocomplete="email"></label>
+      <label>Password <input name="password" type="password" required minlength="8" maxlength="72" autocomplete="current-password"></label>
+      <p id="auth-error" class="error" role="alert"></p>
+      <button type="submit" class="primary" id="auth-submit">Sign in</button>
+      <p class="muted switch">
+        <span id="auth-switch-text">New here?</span>
+        <button type="button" id="auth-switch" class="link">Create an account</button>
+      </p>
+    </form>
+  </section>
 
-  <section id="stats" class="stats" aria-live="polite"></section>
+  <div id="app-view" hidden>
+    <header class="top">
+      <h1>Job Tracker</h1>
+      <input id="search" type="search" placeholder="Search company or role…" aria-label="Search">
+      <button id="new-btn" class="primary">+ New application</button>
+      <span id="user-name" class="muted"></span>
+      <button id="logout-btn">Sign out</button>
+    </header>
 
-  <main id="board" class="board"></main>
+    <section id="stats" class="stats" aria-live="polite"></section>
+
+    <main id="board" class="board"></main>
+  </div>
 
   <dialog id="dialog">
     <form id="form" method="dialog">
